@@ -8,6 +8,17 @@ datasource db {
   directUrl = env("DATABASE_URL")
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  profession String  @default("webdev")
+  xp        Int      @default(0)
+  createdAt DateTime @default(now())
+  quests    Quest[]
+}
+
 model Quest {
   id         Int      @id @default(autoincrement())
   title      String
@@ -15,4 +26,6 @@ model Quest {
   difficulty String
   status     String   @default("todo")
   createdAt  DateTime @default(now())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
 }

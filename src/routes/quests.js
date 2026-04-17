@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
+const authMiddleware = require('../middleware/auth');
 
-// GET all quests
+// All quest routes require authentication
+router.use(authMiddleware);
+
+// GET all quests for logged-in user
 router.get('/', async (req, res) => {
   try {
     const quests = await prisma.quest.findMany({
+      where: { userId: req.userId },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, quests });
@@ -14,17 +19,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST create a quest
+// POST create a quest for logged-in user
 router.post('/', async (req, res) => {
   try {
     const { title, subject, difficulty } = req.body;
 
     if (!title || !subject || !difficulty) {
-      return res.status(400).json({ success: false, message: 'All fields required' });
+      return res.status(400).json({
+        success: false,
+        message: 'All fields required'
+      });
     }
 
     const quest = await prisma.quest.create({
-      data: { title, subject, difficulty }
+      data: {
+        title,
+        subject,
+        difficulty,
+        userId: req.userId
+      }
     });
 
     res.status(201).json({ success: true, quest });
@@ -40,7 +53,10 @@ router.patch('/:id', async (req, res) => {
     const { status } = req.body;
 
     const quest = await prisma.quest.update({
-      where: { id: parseInt(id) },
+      where: {
+        id: parseInt(id),
+        userId: req.userId
+      },
       data: { status }
     });
 
@@ -56,7 +72,10 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     await prisma.quest.delete({
-      where: { id: parseInt(id) }
+      where: {
+        id: parseInt(id),
+        userId: req.userId
+      }
     });
 
     res.json({ success: true, message: 'Quest deleted' });
